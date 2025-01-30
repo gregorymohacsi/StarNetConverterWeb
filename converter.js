@@ -1,4 +1,4 @@
-// converter.js (ANGLE-MEASUREMENT-FIX-V1)
+// converter.js (ANGLE-MEASUREMENT-FIX-V2)
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
@@ -72,11 +72,12 @@ function converter(inFile, outFile, callback) {
             if (targetMatch) {
                 recentTargetHeight = targetMatch.groups.target_height;
                 if (recentHorizontal && recentInstrumentHeight && recentTargetHeight && attribute) {
-                    currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}`;  //ANGLE-MEASUREMENT-FIX-V1
+                    currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}\n`;  //ANGLE-MEASUREMENT-FIX-V2
                 }
             }
-            if (currentCoords && measurementsFound) {
-                output += "DE\n";
+            if (currentDMData) { //Add DM data to the output when avaliable  ANGLE-MEASUREMENT-FIX-V2
+                output += currentDMData;  //Add stored DM data               ANGLE-MEASUREMENT-FIX-V2
+                currentDMData = null;  // Reset for the next DM record       ANGLE-MEASUREMENT-FIX-V2
             }
         }
 
