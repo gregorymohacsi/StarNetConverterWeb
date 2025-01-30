@@ -64,7 +64,7 @@ function converter(inFile, outFile, callback) {
 
             const attributeMatch = attributesLine.exec(line);
             if (attributeMatch) {
-                attribute = attributeMatch.groups.attribute;
+                attribute = attributeMatch.groups.attribute.trim();  //Trim whitespaces from attributes
                 if (attribute[0] >= '0' && attribute[0] <= '9') {
                     attribute = 'CH' + attribute;
                 }
