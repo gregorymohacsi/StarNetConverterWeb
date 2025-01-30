@@ -85,7 +85,6 @@ function converter(inFile, outFile, callback) {
     reader.readAsText(inFile);
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('fileInput');
 
@@ -100,11 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     link.download = 'converted.txt';
                     link.click();
 
+                    // *** KEY FIX: Use a TextDecoder to handle encoding correctly ***
+                    const decoder = new TextDecoder('utf-8'); // Or the appropriate encoding
+
                     const outputBlob = new Blob([convertedData], { type: 'text/plain' });
                     const reader = new FileReader();
 
                     reader.onload = (cleanupEvent) => {
-                        const cleanedData = cleanupEvent.target.result;
+                        const cleanedData = decoder.decode(cleanupEvent.target.result); // Decode the result
 
                         const cleanedBlob = new Blob([cleanedData], { type: 'text/plain' });
                         const cleanedLink = document.createElement('a');
@@ -115,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert("Conversion and cleanup complete!");
                     };
 
-                    reader.readAsText(outputBlob);
+                    reader.readAsArrayBuffer(outputBlob); // Read as ArrayBuffer for decoding
                 });
             }
         });
