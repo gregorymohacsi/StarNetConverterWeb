@@ -1,11 +1,10 @@
-// converter.js (LINE-ENDING-FIX-V1)
+// converter.js (PU-ID-REGEX-FIX-V1)
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
-    const attributesLine = /N:pu_id\s+V:(?<attribute>.*(?=\n))/s;
+    const attributesLine = /N:pu_id\s+V:(?<attribute>[^\n]*)/; // Corrected regex
     const instrumentHeight = /is_hi\s+V:(?<instrument_height>[0-9]+\.[0-9]+)/;
     const targetHeight = /N:target_height V:(?<target_height>[0-9]+\.[0-9]+)/;
-
     let coordsInfo = [];
     let output = "";
 
