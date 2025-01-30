@@ -1,4 +1,4 @@
-// converter.js (ANGLE-MEASUREMENT-FIX-V2)
+// converter.js (FINAL-FIXES-V1)
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
@@ -29,8 +29,10 @@ function converter(inFile, outFile, callback) {
         let attribute = null;
         let recentHorizontal = null;
         let measurementsFound = false;
-        let currentCoords = null;  //LINE-ORDER-DE-FIX-V1
-        let currentDMData = null; // Store DM data temporarily  ANGLE-MEASUREMENT-FIX-V1
+        let currentCoords = null;              //LINE-ORDER-DE-FIX-V1
+        let currentDMData = null;              // Store DM data temporarily        ANGLE-MEASUREMENT-FIX-V1
+        let instrumentHeightValue = null;      // Store instrument height          FINAL-FIXES-V1
+        let targetHeightValue = null;          // Store target height              FINAL-FIXES-V1
 
         for (const line of lines) {
             const coordMatch = coordsLine.exec(line);
@@ -47,6 +49,8 @@ function converter(inFile, outFile, callback) {
                 recentHorizontal = null;
                 measurementsFound = false;
                 currentDMData = null; // Reset DM data for the new coordinate block
+                instrumentHeightValue = null; // Reset for new coordinate block       FINAL-FIXES-V1
+                targetHeightValue = null; // Reset for new coordinate block           FINAL-FIXES-V1
             }
 
             const measurementMatch = measurementLine.exec(line);
@@ -71,14 +75,14 @@ function converter(inFile, outFile, callback) {
             const targetMatch = targetHeight.exec(line);
             if (targetMatch) {
                 recentTargetHeight = targetMatch.groups.target_height;
-                if (recentHorizontal && recentInstrumentHeight && recentTargetHeight && attribute) {
-                    currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}`;  //ANGLE-MEASUREMENT-FIX-V2
-                }
             }
-            if (currentDMData) { //Add DM data to the output when avaliable  ANGLE-MEASUREMENT-FIX-V2
-                output += currentDMData;  //Add stored DM data               ANGLE-MEASUREMENT-FIX-V2
-                currentDMData = null;  // Reset for the next DM record       ANGLE-MEASUREMENT-FIX-V2
-            }
+            if (recentHorizontal && instrumentHeightValue && targetHeightValue && attribute) { // Check if all data is available
+                  currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${instrumentHeightValue}/${targetHeightValue}\n`; // Construct DM data with newline
+                  output += currentDMData; // Add it immediately
+                  currentDMData = null; // Reset for the next DM record
+                  instrumentHeightValue = null; // Reset for next DM record
+                  targetHeightValue = null; // Reset for next DM record
+            }  
         }
 
         if (currentCoords && measurementsFound) {
