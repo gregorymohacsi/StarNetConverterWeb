@@ -72,7 +72,7 @@ function converter(inFile, outFile, callback) {
             if (targetMatch) {
                 recentTargetHeight = targetMatch.groups.target_height;
                 if (recentHorizontal && recentInstrumentHeight && recentTargetHeight && attribute) {
-                    currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}\n`;  //ANGLE-MEASUREMENT-FIX-V2
+                    currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}`;  //ANGLE-MEASUREMENT-FIX-V2
                 }
             }
             if (currentDMData) { //Add DM data to the output when avaliable  ANGLE-MEASUREMENT-FIX-V2
