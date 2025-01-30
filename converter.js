@@ -2,9 +2,10 @@
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
-    const attributesLine = /N:pu_id\s+V:(?<attribute>[^\n]*)/; // Corrected regex
+    const attributesLine = /N:pu_id\s+V:(?<attribute>.*(?=\n))/s;
     const instrumentHeight = /is_hi\s+V:(?<instrument_height>[0-9]+\.[0-9]+)/;
     const targetHeight = /N:target_height V:(?<target_height>[0-9]+\.[0-9]+)/;
+
     let coordsInfo = [];
     let output = "";
 
@@ -24,15 +25,12 @@ function converter(inFile, outFile, callback) {
         }
         output += "\n";
 
-        let recentInstrumentHeight = null;
-        let recentTargetHeight = null;
-        let attribute = null;
         let recentHorizontal = null;
         let measurementsFound = false;
-        let currentCoords = null;              //LINE-ORDER-DE-FIX-V1
-        let currentDMData = null;              // Store DM data temporarily        ANGLE-MEASUREMENT-FIX-V1
-        let instrumentHeightValue = null;      // Store instrument height          FINAL-FIXES-V1
-        let targetHeightValue = null;          // Store target height              FINAL-FIXES-V1
+        let currentCoords = null;
+        let currentDMData = null;
+        let instrumentHeightValue = null;
+        let targetHeightValue = null;
 
         for (const line of lines) {
             const coordMatch = coordsLine.exec(line);
@@ -48,9 +46,9 @@ function converter(inFile, outFile, callback) {
                 attribute = null;
                 recentHorizontal = null;
                 measurementsFound = false;
-                currentDMData = null; // Reset DM data for the new coordinate block
-                instrumentHeightValue = null; // Reset for new coordinate block       FINAL-FIXES-V1
-                targetHeightValue = null; // Reset for new coordinate block           FINAL-FIXES-V1
+                currentDMData = null;
+                instrumentHeightValue = null;
+                targetHeightValue = null;
             }
 
             const measurementMatch = measurementLine.exec(line);
@@ -61,7 +59,7 @@ function converter(inFile, outFile, callback) {
 
             const instrumentMatch = instrumentHeight.exec(line);
             if (instrumentMatch) {
-                recentInstrumentHeight = instrumentMatch.groups.instrument_height;
+                instrumentHeightValue = instrumentMatch.groups.instrument_height;
             }
 
             const attributeMatch = attributesLine.exec(line);
@@ -74,22 +72,23 @@ function converter(inFile, outFile, callback) {
 
             const targetMatch = targetHeight.exec(line);
             if (targetMatch) {
-                recentTargetHeight = targetMatch.groups.target_height;
+                targetHeightValue = targetMatch.groups.target_height;
             }
-            if (recentHorizontal && instrumentHeightValue && targetHeightValue && attribute) { // Check if all data is available
-                  currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${instrumentHeightValue}/${targetHeightValue}\n`; // Construct DM data with newline
-                  output += currentDMData; // Add it immediately
-                  currentDMData = null; // Reset for the next DM record
-                  instrumentHeightValue = null; // Reset for next DM record
-                  targetHeightValue = null; // Reset for next DM record
-            }  
+
+            if (recentHorizontal && instrumentHeightValue && targetHeightValue && attribute) {
+                currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${instrumentHeightValue}/${targetHeightValue}\n`;
+                output += currentDMData;
+                currentDMData = null;
+                instrumentHeightValue = null;
+                targetHeightValue = null;
+            }
         }
 
         if (currentCoords && measurementsFound) {
-            output += "DE\n"; // DE on its own line
+            output += "DE\n";
         }
 
-        callback(output.replace(/\r\n/g, '\n')); // LINE-ENDING-FIX-V1: Normalize line endings
+        callback(output.replace(/\r\n/g, '\n'));
     };
 
     reader.readAsText(inFile);
@@ -109,14 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     link.download = 'converted.txt';
                     link.click();
 
-                    // *** KEY FIX: Use a TextDecoder to handle encoding correctly ***
-                    const decoder = new TextDecoder('utf-8'); // Or the appropriate encoding
-
                     const outputBlob = new Blob([convertedData], { type: 'text/plain' });
                     const reader = new FileReader();
 
                     reader.onload = (cleanupEvent) => {
-                        const cleanedData = decoder.decode(cleanupEvent.target.result); // Decode the result
+                        const cleanedData = cleanupEvent.target.result;
 
                         const cleanedBlob = new Blob([cleanedData], { type: 'text/plain' });
                         const cleanedLink = document.createElement('a');
@@ -127,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert("Conversion and cleanup complete!");
                     };
 
-                    reader.readAsArrayBuffer(outputBlob); // Read as ArrayBuffer for decoding
+                    reader.readAsArrayBuffer(outputBlob);
                 });
             }
         });
