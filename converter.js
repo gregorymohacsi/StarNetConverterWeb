@@ -1,3 +1,4 @@
+// converter.js (LINE-ENDING-FIX-V1)
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
@@ -79,7 +80,7 @@ function converter(inFile, outFile, callback) {
             output += "DE\n";
         }
 
-        callback(output);
+        callback(output.replace(/\r\n/g, '\n')); // LINE-ENDING-FIX-V1: Normalize line endings
     };
 
     reader.readAsText(inFile);
