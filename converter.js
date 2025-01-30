@@ -1,4 +1,4 @@
-// converter.js (LINE-ORDER-DE-FIX-V1)
+// converter.js (ANGLE-MEASUREMENT-FIX-V1)
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
@@ -30,6 +30,7 @@ function converter(inFile, outFile, callback) {
         let recentHorizontal = null;
         let measurementsFound = false;
         let currentCoords = null;  //LINE-ORDER-DE-FIX-V1
+        let currentDMData = null; // Store DM data temporarily  ANGLE-MEASUREMENT-FIX-V1
 
         for (const line of lines) {
             const coordMatch = coordsLine.exec(line);
@@ -45,6 +46,7 @@ function converter(inFile, outFile, callback) {
                 attribute = null;
                 recentHorizontal = null;
                 measurementsFound = false;
+                currentDMData = null; // Reset DM data for the new coordinate block
             }
 
             const measurementMatch = measurementLine.exec(line);
@@ -70,8 +72,11 @@ function converter(inFile, outFile, callback) {
             if (targetMatch) {
                 recentTargetHeight = targetMatch.groups.target_height;
                 if (recentHorizontal && recentInstrumentHeight && recentTargetHeight && attribute) {
-                    output += `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}\n`;  //LINE-ORDER-DE-FIX-V1
+                    currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${recentInstrumentHeight}/${recentTargetHeight}`;  //ANGLE-MEASUREMENT-FIX-V1
                 }
+            }
+            if (currentCoords && measurementsFound) {
+                output += "DE\n";
             }
         }
 
