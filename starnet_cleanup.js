@@ -1,9 +1,7 @@
-// starnet_cleanup.js
+// starnet_cleanup.js logic
 function cleanOutput(inFile, outFile, callback) {
     const fixMinutes = /(\d{2,3})-(\d)-(\d{1,2})/g;
     const fixSeconds = /(\d{2,3})-(\d{2})-(\d\s)/g;
-
-    const padZero = (num) => num.toString().padStart(2, '0');
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -23,4 +21,9 @@ function cleanOutput(inFile, outFile, callback) {
         }
     };
     reader.readAsText(inFile);
+}
+
+// Utility function to pad numbers with leading zeros
+function padZero(num) {
+    return num.toString().padStart(2, '0');
 }

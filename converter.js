@@ -1,4 +1,4 @@
-// converter.js (FINAL-FIXES-V1)
+// converter.js logic
 function converter(inFile, outFile, callback) {
     const coordsLine = /Coordinate:\s+Name:\s+(?<name>.*)[^X]+X:\s+(?<X>[0-9.]+)[^Y]+Y:\s+(?<Y>[0-9.]+)[^Z]+Z:\s+(?<Z>[0-9.]+)/i;
     const measurementLine = /\s+Measurement:\s+H:\s+(?<h_degrees>[0-9]+).\s+(?<h_minutes>[0-9]+)'\s+(?<h_seconds>[0-9]+)"\s+V:\s+(?<v_degrees>[0-9]+).\s+(?<v_minutes>[0-9]+)'\s+(?<v_seconds>[0-9]+)"\s+S:\s+(?<S>[0-9]+\.[0-9]+)/m;
@@ -6,94 +6,115 @@ function converter(inFile, outFile, callback) {
     const instrumentHeight = /is_hi\s+V:(?<instrument_height>[0-9]+\.[0-9]+)/;
     const targetHeight = /N:target_height V:(?<target_height>[0-9]+\.[0-9]+)/;
 
-    let coordsInfo = [];
-    let output = "";
-
     const reader = new FileReader();
     reader.onload = (event) => {
         const fileContent = event.target.result;
         const lines = fileContent.split('\n');
 
+        // First collect all unique coordinates
+        const coordsMap = new Map();
         for (const line of lines) {
             const m = coordsLine.exec(line);
-            if (m) {
-                if (!coordsInfo.includes(m.groups.name)) {
-                    coordsInfo.push(m.groups.name);
-                    output += `C ${m.groups.name} ${m.groups.X} ${m.groups.Y} ${m.groups.Z}\n`;
-                }
+            if (m && !coordsMap.has(m.groups.name)) {
+                coordsMap.set(m.groups.name, {
+                    X: m.groups.X,
+                    Y: m.groups.Y,
+                    Z: m.groups.Z
+                });
             }
         }
-        output += "\n";
 
-        let recentHorizontal = null;
-        let measurementsFound = false;
-        let currentCoords = null;
-        let currentDMData = null;
-        let instrumentHeightValue = null;
-        let targetHeightValue = null;
+        // Build coordinates section
+        let output = '';
+        for (const [name, coords] of coordsMap) {
+            output += `C ${name} ${coords.X} ${coords.Y} ${coords.Z}\n`;
+        }
+        output += '\n';  // Single blank line after coordinates
+
+        // Process measurements
+        let currentStation = null;
+        let measurementData = {
+            horizontal: null,
+            instrumentHeight: null,
+            targetHeight: null,
+            attribute: null
+        };
 
         for (const line of lines) {
             const coordMatch = coordsLine.exec(line);
-
             if (coordMatch) {
-                if (currentCoords && measurementsFound) {
-                    output += "DE\n";
+                if (currentStation) {
+                    output += 'DE\n\n';
                 }
-                currentCoords = coordMatch.groups.name;
-                output += `DB ${coordMatch.groups.name}\n`;
-                recentInstrumentHeight = null;
-                recentTargetHeight = null;
-                attribute = null;
-                recentHorizontal = null;
-                measurementsFound = false;
-                currentDMData = null;
-                instrumentHeightValue = null;
-                targetHeightValue = null;
+
+                currentStation = coordMatch.groups.name;
+                output += `DB ${currentStation}\n`;
+
+                // Reset measurement data
+                measurementData = {
+                    horizontal: null,
+                    instrumentHeight: null,
+                    targetHeight: null,
+                    attribute: null
+                };
             }
 
             const measurementMatch = measurementLine.exec(line);
             if (measurementMatch) {
-                recentHorizontal = [measurementMatch.groups.h_degrees, measurementMatch.groups.h_minutes, measurementMatch.groups.h_seconds, measurementMatch.groups.S, measurementMatch.groups.v_degrees, measurementMatch.groups.v_minutes, measurementMatch.groups.v_seconds];
-                measurementsFound = true;
+                measurementData.horizontal = {
+                    h_degrees: padZero(measurementMatch.groups.h_degrees),
+                    h_minutes: padZero(measurementMatch.groups.h_minutes),
+                    h_seconds: padZero(measurementMatch.groups.h_seconds),
+                    S: measurementMatch.groups.S,
+                    v_degrees: padZero(measurementMatch.groups.v_degrees),
+                    v_minutes: padZero(measurementMatch.groups.v_minutes),
+                    v_seconds: padZero(measurementMatch.groups.v_seconds)
+                };
             }
 
             const instrumentMatch = instrumentHeight.exec(line);
             if (instrumentMatch) {
-                instrumentHeightValue = instrumentMatch.groups.instrument_height;
+                measurementData.instrumentHeight = instrumentMatch.groups.instrument_height;
             }
 
             const attributeMatch = attributesLine.exec(line);
             if (attributeMatch) {
-                attribute = attributeMatch.groups.attribute.trim();  //Trim whitespaces from attributes
-                if (attribute[0] >= '0' && attribute[0] <= '9') {
-                    attribute = 'CH' + attribute;
+                let attr = attributeMatch.groups.attribute.trim();
+                if (attr[0] >= '0' && attr[0] <= '9') {
+                    attr = 'CH' + attr;
                 }
+                measurementData.attribute = attr;
             }
 
             const targetMatch = targetHeight.exec(line);
             if (targetMatch) {
-                targetHeightValue = targetMatch.groups.target_height;
-            }
+                measurementData.targetHeight = targetMatch.groups.target_height;
 
-            if (recentHorizontal && instrumentHeightValue && targetHeightValue && attribute) {
-                currentDMData = `DM ${attribute} ${recentHorizontal.join('-')} ${instrumentHeightValue}/${targetHeightValue}\n`;
-                output += currentDMData;
-                currentDMData = null;
-                instrumentHeightValue = null;
-                targetHeightValue = null;
+                // If we have all required data, output the measurement
+                if (measurementData.horizontal && measurementData.instrumentHeight && measurementData.attribute) {
+                    const h = measurementData.horizontal;
+                    output += `DM ${measurementData.attribute} ${h.h_degrees}-${h.h_minutes}-${h.h_seconds} ${h.S} ${h.v_degrees}-${h.v_minutes}-${h.v_seconds} ${measurementData.instrumentHeight}/${measurementData.targetHeight}\n`;
+                }
             }
         }
 
-        if (currentCoords && measurementsFound) {
-            output += "DE\n";
+        // Close the last station
+        if (currentStation) {
+            output += 'DE\n';
         }
 
-        callback(output.replace(/\r\n/g, '\n'));
+        callback(output);
     };
 
     reader.readAsText(inFile);
 }
 
+// Utility function to pad numbers with leading zeros
+function padZero(num) {
+    return num.toString().padStart(2, '0');
+}
+
+// DOM event listener setup
 document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('fileInput');
 
@@ -108,22 +129,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     link.download = 'converted.txt';
                     link.click();
 
+                    // Clean up the output
                     const outputBlob = new Blob([convertedData], { type: 'text/plain' });
-                    const reader = new FileReader();
-
-                    reader.onload = (cleanupEvent) => {
-                        const cleanedData = cleanupEvent.target.result;
-
-                        const cleanedBlob = new Blob([cleanedData], { type: 'text/plain' });
-                        const cleanedLink = document.createElement('a');
-                        cleanedLink.href = URL.createObjectURL(cleanedBlob);
-                        cleanedLink.download = 'converted_cleaned.txt';
-                        cleanedLink.click();
-
+                    cleanOutput(outputBlob, 'converted_cleaned.txt', () => {
                         alert("Conversion and cleanup complete!");
-                    };
-
-                    reader.readAsArrayBuffer(outputBlob);
+                    });
                 });
             }
         });
