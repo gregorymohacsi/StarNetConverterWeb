@@ -1,13 +1,27 @@
-<!DOCTYPE html>
-<html>
 <head>
     <title>12d to StarNet Converter</title>
+    <style>
+        body {
+            font-family: sans-serif; /* Use a clean font */
+            margin: 20px; /* Add some margin around the content */
+        }
+        h1 {
+            text-align: center; /* Center the heading */
+            margin-bottom: 20px; /* Add space below the heading */
+        }
+        input[type="file"] {
+            margin-bottom: 10px; /* Add space below the file input */
+        }
+        button {
+            padding: 10px 20px; /* Add some padding to the button */
+            margin-bottom: 20px; /* Add space below the button */
+        }
+        textarea {
+            width: 100%; /* Make the textarea take full width */
+            height: 300px; /* Set a reasonable height for the textarea */
+            border: 1px solid #ccc; /* Add a border */
+            padding: 10px; /* Add padding inside the textarea */
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+    </style>
 </head>
-<body>
-    <h1>12d to StarNet Converter</h1>
-    <input type="file" id="fileInput" accept=".rpt">
-    <button id="convertButton">Convert and Download</button>
-    <textarea id="output" readonly></textarea> <--- Add this line
-    <script src="script.js"></script>
-</body>
-</html>
