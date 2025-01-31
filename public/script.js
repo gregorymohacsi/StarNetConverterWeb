@@ -1,44 +1,41 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const uploadButton = document.getElementById('uploadButton');
+document.getElementById('convertButton').addEventListener('click', () => {
     const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    const outputArea = document.getElementById('output'); // Get the output textarea
 
-    if (uploadButton && fileInput) {
-        uploadButton.addEventListener('click', () => {
-            const file = fileInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const fileContent = event.target.result;
 
-            if (!file) {
-                alert("Please select a file.");
-                return;
-            }
+            outputArea.value = ''; // Clear output area
 
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // Send the file to the Node.js backend
             fetch('/convert', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ fileContent }),
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Error processing file');
+                    return response.json().then(err => {throw new Error(err.error || 'Conversion failed')});
                 }
-                return response.blob();
+                return response.json();
             })
-            .then(blob => {
-                // Create a download link for the processed file
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'converted.txt';
-                link.click();
-                alert("Conversion complete! File downloaded.");
+            .then(data => {
+                if (data.output) {
+                    outputArea.value = data.output;
+                } else if (data.error) {
+                    console.error(data.error);
+                    alert(data.error);
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("An error occurred while processing the file.");
+                alert(error.message || 'An error occurred.');
             });
-        });
-    } else {
-        console.error("Required elements not found. Check your HTML.");
+        };
+        reader.readAsText(file);
     }
 });

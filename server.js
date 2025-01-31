@@ -17,8 +17,9 @@ app.post('/convert', (req, res) => {
         return res.status(400).json({ error: 'No file content provided.' });
     }
 
-    const pythonProcess = spawn('python', [path.join(__dirname, 'starnet_converter.py')], {
-        // cwd: __dirname, // Uncomment if needed
+    const pythonScriptPath = path.join(__dirname, 'starnet_converter.py');
+    const pythonProcess = spawn('python', [pythonScriptPath], {
+        // cwd: __dirname,  // Uncomment if needed
     });
 
     let pythonOutput = '';

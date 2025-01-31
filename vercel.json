@@ -1,0 +1,10 @@
+{
+    "version": 2,
+    "builds": [
+      { "src": "server.js", "use": "@vercel/node" },
+      { "src": "starnet_converter.py", "use": "@vercel/python" }
+    ],
+    "routes": [
+      { "src": "/(.*)", "dest": "server.js" }
+    ]
+  }
