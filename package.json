@@ -1,0 +1,26 @@
+{
+  "name": "starnetconverterweb",
+  "version": "1.0.0",
+  "proxy": "http://localhost:3000",
+  "main": "converter.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gregorymohacsi/StarNetConverterWeb.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gregorymohacsi/StarNetConverterWeb/issues"
+  },
+  "homepage": "https://github.com/gregorymohacsi/StarNetConverterWeb#readme",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
