@@ -5,6 +5,7 @@
       { "src": "starnet_converter.py", "use": "@vercel/python" }
     ],
     "routes": [
-      { "src": "/(.*)", "dest": "server.js" }
+      { "src": "/", "dest": "/index.html" },  
+      { "src": "/(.*)", "dest": "server.js" } 
     ]
   }
